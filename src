@@ -1,0 +1,105 @@
+%% [code]
+# This Python 3 environment comes with many helpful analytics libraries installed
+# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python
+# For example, here's several helpful packages to load
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+
+# Input data files are available in the read-only "../input/" directory
+# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+# You can write up to 5GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using "Save & Run All" 
+# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session
+
+# %% [code]
+from datetime import datetime 
+import matplotlib.pyplot as plt
+plt.style.use('fivethirtyeight')
+
+# %% [code]
+#import quandl
+import numpy as np 
+from sklearn.linear_model import LinearRegression 
+from sklearn.svm import SVR
+from sklearn.model_selection import train_test_split
+
+# %% [code]
+df = pd.read_csv('/kaggle/input/amazon-stocks-lifetime-dataset/AMZN.csv')
+
+# %% [code]
+df
+
+# %% [code]
+df =df[['Close']]
+
+# %% [code]
+df
+
+# %% [code]
+df.isnull().sum()
+
+# %% [code]
+forfut = 10 
+df['Predict'] = df[['Close']].shift(-forfut)
+print(df.head())
+
+# %% [code]
+print(df.tail())
+
+# %% [code]
+newarr = np.array(df.drop(['Predict'],1)) 
+newarr = newarr[:-forfut]
+print(newarr)
+
+# %% [code]
+yarr=np.array(df['Predict'])
+yarr = yarr[:-forfut]
+print(yarr)
+
+# %% [code]
+x_train, x_test, y_train, y_test = train_test_split(newarr, yarr, test_size = .2)
+
+# %% [code]
+svr_rbf = SVR(kernel = 'rbf', C= 1e3, gamma=0.1)
+svr_rbf.fit(x_train, y_train)
+
+# %% [code]
+svm_confidence = svr_rbf.score(x_test, y_test)
+print('svm confidence', svm_confidence)
+
+# %% [code]
+linreg = LinearRegression ()
+linreg.fit(x_train, y_train)
+
+# %% [code]
+linreg_confidence = linreg.score(x_test, y_test)
+print('Linear regression confidence', linreg_confidence)
+
+# %% [code]
+x_forfut = np.array(df.drop(['Predict'],1))[-forfut:]
+
+# %% [code]
+print(x_forfut)
+
+# %% [code]
+linreg_pre = linreg.predict(x_forfut)
+print(linreg_pre)
+
+# %% [code]
+svm_pre = svr_rbf.predict(x_forfut)
+print(svm_pre)
+
+# %% [code]
+plt.figure(figsize=(12.5,4.5))
+plt.plot(linreg_pre, label = 'Linear Regression')
+plt.plot(svm_pre, label = 'Support Vector Regression')
+plt.title('Amazon')
+plt.ylabel('USD')
+plt.legend(loc='upper left')
+plt.show()
